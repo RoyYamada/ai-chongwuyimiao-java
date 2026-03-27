@@ -1,6 +1,7 @@
 package com.example.demo.auth;
 
 import com.example.demo.common.ApiResponse;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -14,6 +15,7 @@ public class WxAuthController {
         this.service = service;
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class CodeBody {
         public String code;
     }

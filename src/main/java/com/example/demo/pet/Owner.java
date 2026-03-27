@@ -5,6 +5,9 @@ public class Owner {
     private String name;
     private String phone;
     private String email;
+    private String avatar;
+    private String openid;
+    private String unionid;
 
     public Long getId() {
         return id;
@@ -36,5 +39,29 @@ public class Owner {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getAvatar() {
+        return avatar;
+    }
+
+    public void setAvatar(String avatar) {
+        this.avatar = avatar;
+    }
+
+    public String getOpenid() {
+        return openid;
+    }
+
+    public void setOpenid(String openid) {
+        this.openid = openid;
+    }
+
+    public String getUnionid() {
+        return unionid;
+    }
+
+    public void setUnionid(String unionid) {
+        this.unionid = unionid;
     }
 }
