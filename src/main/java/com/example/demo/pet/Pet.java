@@ -12,6 +12,9 @@ public class Pet {
     private LocalDate birthDate;
     private Double weightKg;
     private String microchip;
+    private Integer age;
+    private String hospital;
+    private String photoUrl;
 
     public Long getId() {
         return id;
@@ -83,5 +86,29 @@ public class Pet {
 
     public void setMicrochip(String microchip) {
         this.microchip = microchip;
+    }
+
+    public Integer getAge() {
+        return age;
+    }
+
+    public void setAge(Integer age) {
+        this.age = age;
+    }
+
+    public String getHospital() {
+        return hospital;
+    }
+
+    public void setHospital(String hospital) {
+        this.hospital = hospital;
+    }
+
+    public String getPhotoUrl() {
+        return photoUrl;
+    }
+
+    public void setPhotoUrl(String photoUrl) {
+        this.photoUrl = photoUrl;
     }
 }

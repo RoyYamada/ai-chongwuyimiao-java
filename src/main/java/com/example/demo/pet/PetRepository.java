@@ -21,7 +21,7 @@ public class PetRepository {
     public Long create(Pet p) {
         KeyHolder kh = new GeneratedKeyHolder();
         jdbcTemplate.update(con -> {
-            PreparedStatement ps = con.prepareStatement("insert into pet(owner_id,name,species,breed,gender,birth_date,weight_kg,microchip) values(?,?,?,?,?,?,?,?)", new String[]{"id"});
+            PreparedStatement ps = con.prepareStatement("insert into pet(owner_id,name,species,breed,gender,birth_date,weight_kg,microchip,age,hospital,photo_url) values(?,?,?,?,?,?,?,?,?,?,?)", new String[]{"id"});
             ps.setLong(1, p.getOwnerId());
             ps.setString(2, p.getName());
             ps.setString(3, p.getSpecies());
@@ -30,13 +30,16 @@ public class PetRepository {
             ps.setObject(6, p.getBirthDate() == null ? null : Date.valueOf(p.getBirthDate()));
             if (p.getWeightKg() == null) ps.setObject(7, null); else ps.setDouble(7, p.getWeightKg());
             ps.setString(8, p.getMicrochip());
+            if (p.getAge() == null) ps.setObject(9, null); else ps.setInt(9, p.getAge());
+            ps.setString(10, p.getHospital());
+            ps.setString(11, p.getPhotoUrl());
             return ps;
         }, kh);
         return kh.getKey().longValue();
     }
 
     public Optional<Pet> findById(Long id) {
-        List<Pet> list = jdbcTemplate.query("select id,owner_id,name,species,breed,gender,birth_date,weight_kg,microchip from pet where id=?",
+        List<Pet> list = jdbcTemplate.query("select id,owner_id,name,species,breed,gender,birth_date,weight_kg,microchip,age,hospital,photo_url from pet where id=?",
                 (rs, i) -> {
                     Pet p = new Pet();
                     p.setId(rs.getLong("id"));
@@ -48,13 +51,16 @@ public class PetRepository {
                     p.setBirthDate(rs.getDate("birth_date") == null ? null : rs.getDate("birth_date").toLocalDate());
                     p.setWeightKg(rs.getObject("weight_kg") == null ? null : rs.getDouble("weight_kg"));
                     p.setMicrochip(rs.getString("microchip"));
+                    p.setAge(rs.getObject("age") == null ? null : rs.getInt("age"));
+                    p.setHospital(rs.getString("hospital"));
+                    p.setPhotoUrl(rs.getString("photo_url"));
                     return p;
                 }, id);
         return list.stream().findFirst();
     }
 
     public List<Pet> listByOwner(Long ownerId) {
-        return jdbcTemplate.query("select id,owner_id,name,species,breed,gender,birth_date,weight_kg,microchip from pet where owner_id=? order by id desc",
+        return jdbcTemplate.query("select id,owner_id,name,species,breed,gender,birth_date,weight_kg,microchip,age,hospital,photo_url from pet where owner_id=? order by id desc",
                 (rs, i) -> {
                     Pet p = new Pet();
                     p.setId(rs.getLong("id"));
@@ -66,6 +72,9 @@ public class PetRepository {
                     p.setBirthDate(rs.getDate("birth_date") == null ? null : rs.getDate("birth_date").toLocalDate());
                     p.setWeightKg(rs.getObject("weight_kg") == null ? null : rs.getDouble("weight_kg"));
                     p.setMicrochip(rs.getString("microchip"));
+                    p.setAge(rs.getObject("age") == null ? null : rs.getInt("age"));
+                    p.setHospital(rs.getString("hospital"));
+                    p.setPhotoUrl(rs.getString("photo_url"));
                     return p;
                 }, ownerId);
     }
