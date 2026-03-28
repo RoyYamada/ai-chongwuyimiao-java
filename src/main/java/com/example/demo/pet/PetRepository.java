@@ -78,4 +78,21 @@ public class PetRepository {
                     return p;
                 }, ownerId);
     }
+
+    public void update(Pet p) {
+        jdbcTemplate.update(
+                "update pet set name=?, species=?, breed=?, gender=?, birth_date=?, weight_kg=?, microchip=?, age=?, hospital=?, photo_url=? where id=?",
+                p.getName(),
+                p.getSpecies(),
+                p.getBreed(),
+                p.getGender(),
+                p.getBirthDate() == null ? null : Date.valueOf(p.getBirthDate()),
+                p.getWeightKg(),
+                p.getMicrochip(),
+                p.getAge(),
+                p.getHospital(),
+                p.getPhotoUrl(),
+                p.getId()
+        );
+    }
 }

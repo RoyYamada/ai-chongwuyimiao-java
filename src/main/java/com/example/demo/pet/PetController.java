@@ -34,4 +34,11 @@ public class PetController {
     public List<Pet> list(@RequestParam Long ownerId) {
         return repo.listByOwner(ownerId);
     }
+
+    @PutMapping("/{id}")
+    @Operation(summary = "修改宠物信息", description = "根据ID修改宠物信息")
+    public void update(@PathVariable Long id, @RequestBody Pet p) {
+        p.setId(id);
+        repo.update(p);
+    }
 }

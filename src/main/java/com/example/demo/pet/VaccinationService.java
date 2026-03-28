@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -36,5 +37,133 @@ public class VaccinationService {
         v.setNextDueAt(next);
         v.setStatus("RECORDED");
         return vaccinationRepository.create(v);
+    }
+
+    @Transactional
+    public VaccinationStatusUpdateResult updateVaccinationStatus(Long vaccinationId) {
+        // 查找当前接种记录
+        Vaccination currentVaccination = vaccinationRepository.findById(vaccinationId);
+        if (currentVaccination == null) {
+            throw new RuntimeException("接种记录不存在");
+        }
+
+        // 获取疫苗信息
+        List<Vaccine> vaccines = vaccineRepository.list(null);
+        Vaccine vaccine = vaccines.stream()
+                .filter(v -> v.getId().equals(currentVaccination.getVaccineId()))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("疫苗不存在"));
+
+        // 更新状态为已接种
+        vaccinationRepository.updateStatus(vaccinationId, "COMPLETED");
+
+        // 计算下次接种日期
+        Instant nextDueAt = null;
+        int dosesRequired = vaccine.getDosesRequired() == null ? 1 : vaccine.getDosesRequired();
+        int intervalDays = vaccine.getIntervalDays() == null ? 0 : vaccine.getIntervalDays();
+        int validMonths = vaccine.getValidMonths() == null ? 12 : vaccine.getValidMonths();
+        Instant administered = currentVaccination.getAdministeredAt() == null ? Instant.now() : currentVaccination.getAdministeredAt();
+
+        if (currentVaccination.getDoseNumber() < dosesRequired) {
+            LocalDateTime ldt = LocalDateTime.ofInstant(administered, ZoneId.systemDefault()).plusDays(intervalDays);
+            nextDueAt = ldt.atZone(ZoneId.systemDefault()).toInstant();
+        } else {
+            LocalDateTime ldt = LocalDateTime.ofInstant(administered, ZoneId.systemDefault()).plusMonths(validMonths);
+            nextDueAt = ldt.atZone(ZoneId.systemDefault()).toInstant();
+        }
+
+        return new VaccinationStatusUpdateResult(true, nextDueAt);
+    }
+
+    @Transactional
+    public Long createNextDoseAutomatically(Long currentVaccinationId) {
+        // 查找当前接种记录
+        Vaccination currentVaccination = vaccinationRepository.findById(currentVaccinationId);
+        if (currentVaccination == null) {
+            throw new RuntimeException("接种记录不存在");
+        }
+
+        // 获取疫苗信息
+        List<Vaccine> vaccines = vaccineRepository.list(null);
+        Vaccine vaccine = vaccines.stream()
+                .filter(v -> v.getId().equals(currentVaccination.getVaccineId()))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("疫苗不存在"));
+
+        // 创建下一针记录
+        Vaccination nextVaccination = new Vaccination();
+        nextVaccination.setPetId(currentVaccination.getPetId());
+        nextVaccination.setVaccineId(currentVaccination.getVaccineId());
+        nextVaccination.setDoseNumber(currentVaccination.getDoseNumber() + 1);
+        nextVaccination.setStatus("PENDING");
+
+        // 计算下次接种日期
+        Instant nextDueAt = null;
+        int dosesRequired = vaccine.getDosesRequired() == null ? 1 : vaccine.getDosesRequired();
+        int intervalDays = vaccine.getIntervalDays() == null ? 0 : vaccine.getIntervalDays();
+        int validMonths = vaccine.getValidMonths() == null ? 12 : vaccine.getValidMonths();
+        Instant administered = currentVaccination.getAdministeredAt() == null ? Instant.now() : currentVaccination.getAdministeredAt();
+
+        if (currentVaccination.getDoseNumber() < dosesRequired) {
+            LocalDateTime ldt = LocalDateTime.ofInstant(administered, ZoneId.systemDefault()).plusDays(intervalDays);
+            nextDueAt = ldt.atZone(ZoneId.systemDefault()).toInstant();
+        } else {
+            LocalDateTime ldt = LocalDateTime.ofInstant(administered, ZoneId.systemDefault()).plusMonths(validMonths);
+            nextDueAt = ldt.atZone(ZoneId.systemDefault()).toInstant();
+        }
+
+        nextVaccination.setNextDueAt(nextDueAt);
+
+        // 保存下一针记录
+        return vaccinationRepository.create(nextVaccination);
+    }
+
+    @Transactional
+    public Long createNextDoseManually(Long currentVaccinationId, Instant customNextDueAt, String clinic, String vetName) {
+        // 查找当前接种记录
+        Vaccination currentVaccination = vaccinationRepository.findById(currentVaccinationId);
+        if (currentVaccination == null) {
+            throw new RuntimeException("接种记录不存在");
+        }
+
+        // 创建下一针记录
+        Vaccination nextVaccination = new Vaccination();
+        nextVaccination.setPetId(currentVaccination.getPetId());
+        nextVaccination.setVaccineId(currentVaccination.getVaccineId());
+        nextVaccination.setDoseNumber(currentVaccination.getDoseNumber() + 1);
+        nextVaccination.setStatus("PENDING");
+        nextVaccination.setNextDueAt(customNextDueAt);
+        nextVaccination.setClinic(clinic);
+        nextVaccination.setVetName(vetName);
+
+        // 保存下一针记录
+        return vaccinationRepository.create(nextVaccination);
+    }
+
+    // 用于返回状态更新结果的内部类
+    public static class VaccinationStatusUpdateResult {
+        private boolean success;
+        private Instant nextDueAt;
+
+        public VaccinationStatusUpdateResult(boolean success, Instant nextDueAt) {
+            this.success = success;
+            this.nextDueAt = nextDueAt;
+        }
+
+        public boolean isSuccess() {
+            return success;
+        }
+
+        public void setSuccess(boolean success) {
+            this.success = success;
+        }
+
+        public Instant getNextDueAt() {
+            return nextDueAt;
+        }
+
+        public void setNextDueAt(Instant nextDueAt) {
+            this.nextDueAt = nextDueAt;
+        }
     }
 }

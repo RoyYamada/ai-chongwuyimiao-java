@@ -71,4 +71,60 @@ public class VaccinationRepository {
                     return r;
                 }, Timestamp.from(to));
     }
+
+    public List<Vaccination> listFutureDue() {
+        return jdbcTemplate.query("select id,pet_id,vaccine_id,dose_number,administered_at,lot_number,clinic,vet_name,next_due_at,status from vaccination where next_due_at is not null order by next_due_at asc",
+                (rs, i) -> {
+                    Vaccination r = new Vaccination();
+                    r.setId(rs.getLong("id"));
+                    r.setPetId(rs.getLong("pet_id"));
+                    r.setVaccineId(rs.getLong("vaccine_id"));
+                    r.setDoseNumber(rs.getInt("dose_number"));
+                    r.setAdministeredAt(rs.getTimestamp("administered_at").toInstant());
+                    r.setLotNumber(rs.getString("lot_number"));
+                    r.setClinic(rs.getString("clinic"));
+                    r.setVetName(rs.getString("vet_name"));
+                    r.setNextDueAt(rs.getTimestamp("next_due_at") == null ? null : rs.getTimestamp("next_due_at").toInstant());
+                    r.setStatus(rs.getString("status"));
+                    return r;
+                });
+    }
+
+    public Vaccination findById(Long id) {
+        return jdbcTemplate.queryForObject("select id,pet_id,vaccine_id,dose_number,administered_at,lot_number,clinic,vet_name,next_due_at,status from vaccination where id=?",
+                (rs, i) -> {
+                    Vaccination r = new Vaccination();
+                    r.setId(rs.getLong("id"));
+                    r.setPetId(rs.getLong("pet_id"));
+                    r.setVaccineId(rs.getLong("vaccine_id"));
+                    r.setDoseNumber(rs.getInt("dose_number"));
+                    r.setAdministeredAt(rs.getTimestamp("administered_at").toInstant());
+                    r.setLotNumber(rs.getString("lot_number"));
+                    r.setClinic(rs.getString("clinic"));
+                    r.setVetName(rs.getString("vet_name"));
+                    r.setNextDueAt(rs.getTimestamp("next_due_at") == null ? null : rs.getTimestamp("next_due_at").toInstant());
+                    r.setStatus(rs.getString("status"));
+                    return r;
+                }, id);
+    }
+
+    public void updateStatus(Long id, String status) {
+        jdbcTemplate.update("update vaccination set status=? where id=?", status, id);
+    }
+
+    public void update(Vaccination v) {
+        jdbcTemplate.update(
+                "update vaccination set pet_id=?, vaccine_id=?, dose_number=?, administered_at=?, lot_number=?, clinic=?, vet_name=?, next_due_at=?, status=? where id=?",
+                v.getPetId(),
+                v.getVaccineId(),
+                v.getDoseNumber(),
+                v.getAdministeredAt() == null ? null : java.sql.Timestamp.from(v.getAdministeredAt()),
+                v.getLotNumber(),
+                v.getClinic(),
+                v.getVetName(),
+                v.getNextDueAt() == null ? null : java.sql.Timestamp.from(v.getNextDueAt()),
+                v.getStatus(),
+                v.getId()
+        );
+    }
 }
