@@ -1,0 +1,1 @@
+ALTER TABLE vaccination ADD COLUMN notes TEXT;

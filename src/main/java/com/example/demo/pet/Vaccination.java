@@ -13,6 +13,8 @@ public class Vaccination {
     private String vetName;
     private Instant nextDueAt;
     private String status;
+    private String notes;
+    private Boolean isUnvaccinated;
 
     public Long getId() {
         return id;
@@ -92,5 +94,21 @@ public class Vaccination {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getNotes() {
+        return notes;
+    }
+
+    public void setNotes(String notes) {
+        this.notes = notes;
+    }
+
+    public Boolean getIsUnvaccinated() {
+        return isUnvaccinated;
+    }
+
+    public void setIsUnvaccinated(Boolean isUnvaccinated) {
+        this.isUnvaccinated = isUnvaccinated;
     }
 }

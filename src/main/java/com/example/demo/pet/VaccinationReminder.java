@@ -6,6 +6,7 @@ import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 
 public class VaccinationReminder {
+    private Long vaccinationId;
     private String petName;
     private String petBreed;
     private String vaccineName;
@@ -14,7 +15,8 @@ public class VaccinationReminder {
     private long daysUntilDue;
     private boolean isOverdue;
 
-    public VaccinationReminder(String petName, String petBreed, String vaccineName, String doseInfo, Instant nextDueAt) {
+    public VaccinationReminder(Long vaccinationId, String petName, String petBreed, String vaccineName, String doseInfo, Instant nextDueAt) {
+        this.vaccinationId = vaccinationId;
         this.petName = petName;
         this.petBreed = petBreed;
         this.vaccineName = vaccineName;
@@ -22,6 +24,14 @@ public class VaccinationReminder {
         this.dueDate = nextDueAt.atZone(ZoneId.systemDefault()).toLocalDate();
         this.daysUntilDue = ChronoUnit.DAYS.between(LocalDate.now(), this.dueDate);
         this.isOverdue = this.daysUntilDue < 0;
+    }
+
+    public Long getVaccinationId() {
+        return vaccinationId;
+    }
+
+    public void setVaccinationId(Long vaccinationId) {
+        this.vaccinationId = vaccinationId;
     }
 
     public String getPetName() {

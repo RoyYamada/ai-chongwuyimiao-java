@@ -29,9 +29,10 @@ public class VaccinationController {
 
     @PostMapping
     @Operation(summary = "记录疫苗接种", description = "记录新的疫苗接种信息")
-    public Long record(@RequestBody Vaccination v, @RequestParam Long vaccineId) {
+    public Vaccination record(@RequestBody Vaccination v, @RequestParam Long vaccineId) {
         Vaccine meta = vaccineRepository.list(null).stream().filter(it -> it.getId().equals(vaccineId)).findFirst().orElseThrow(() -> new RuntimeException("疫苗不存在: " + vaccineId));
-        return service.record(v, meta);
+        Long id = service.record(v, meta);
+        return repo.findById(id);
     }
 
     @GetMapping("/by-pet/{petId}")
@@ -57,6 +58,9 @@ public class VaccinationController {
 
         // 遍历所有接种记录，生成提醒信息
         for (Vaccination vaccination : vaccinations) {
+            // 只处理状态为PENDING的记录
+            if (!"PENDING".equals(vaccination.getStatus())) continue;
+            
             // 获取宠物信息
             Optional<Pet> petOptional = petRepository.findById(vaccination.getPetId());
             if (!petOptional.isPresent()) continue;
@@ -72,14 +76,16 @@ public class VaccinationController {
 
             // 确定是基础免疫还是加强针
             String doseInfo;
-            if (vaccination.getDoseNumber() < vaccine.getDosesRequired()) {
-                doseInfo = "第 " + (vaccination.getDoseNumber() + 1) + " 针";
+            Integer doseNumber = vaccination.getDoseNumber() == null ? 0 : vaccination.getDoseNumber();
+            if (doseNumber < vaccine.getDosesRequired()) {
+                doseInfo = "第 " + (doseNumber + 1) + " 针";
             } else {
                 doseInfo = "加强针";
             }
 
             // 创建提醒信息
             VaccinationReminder reminder = new VaccinationReminder(
+                    vaccination.getId(),
                     pet.getName(),
                     pet.getBreed(),
                     vaccine.getName(),
@@ -101,22 +107,31 @@ public class VaccinationController {
 
     @PostMapping("/create-next-dose/auto/{id}")
     @Operation(summary = "自动创建下一针", description = "根据疫苗类型自动计算下一针的接种日期")
-    public Long createNextDoseAutomatically(@PathVariable Long id) {
-        return service.createNextDoseAutomatically(id);
+    public Vaccination createNextDoseAutomatically(@PathVariable Long id) {
+        Long newId = service.createNextDoseAutomatically(id);
+        return repo.findById(newId);
     }
 
     @PostMapping("/create-next-dose/manual/{id}")
     @Operation(summary = "手动创建下一针", description = "用户自己填写日期和其他信息，覆盖自动计算")
-    public Long createNextDoseManually(
+    public Vaccination createNextDoseManually(
             @PathVariable Long id,
             @RequestBody Vaccination v) {
-        return service.createNextDoseManually(id, v.getNextDueAt(), v.getClinic(), v.getVetName());
+        Long newId = service.createNextDoseManually(id, v.getNextDueAt(), v.getClinic(), v.getVetName());
+        return repo.findById(newId);
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "修改接种疫苗信息", description = "根据ID修改接种疫苗信息")
-    public void update(@PathVariable Long id, @RequestBody Vaccination v) {
+    public Vaccination update(@PathVariable Long id, @RequestBody Vaccination v) {
         v.setId(id);
         repo.update(v);
+        return repo.findById(id);
+    }
+
+    @GetMapping("/{id}")
+    @Operation(summary = "获取接种记录详情", description = "根据ID获取接种记录的详细信息")
+    public Vaccination getById(@PathVariable Long id) {
+        return repo.findById(id);
     }
 }

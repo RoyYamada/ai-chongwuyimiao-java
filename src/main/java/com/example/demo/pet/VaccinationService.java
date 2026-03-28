@@ -25,17 +25,19 @@ public class VaccinationService {
         int dosesRequired = vaccineMeta.getDosesRequired() == null ? 1 : vaccineMeta.getDosesRequired();
         int intervalDays = vaccineMeta.getIntervalDays() == null ? 0 : vaccineMeta.getIntervalDays();
         int validMonths = vaccineMeta.getValidMonths() == null ? 12 : vaccineMeta.getValidMonths();
-        Instant administered = v.getAdministeredAt() == null ? Instant.now() : v.getAdministeredAt();
-        if (v.getDoseNumber() != null && v.getDoseNumber() < dosesRequired) {
-            LocalDateTime ldt = LocalDateTime.ofInstant(administered, ZoneId.systemDefault()).plusDays(intervalDays);
+        Instant administered = v.getAdministeredAt() == null ? null : v.getAdministeredAt();
+        Integer doseNumber = v.getDoseNumber() == null ? 0 : v.getDoseNumber();
+        if (doseNumber < dosesRequired) {
+            LocalDateTime ldt = LocalDateTime.ofInstant(administered == null ? Instant.now() : administered, ZoneId.systemDefault()).plusDays(intervalDays);
             next = ldt.atZone(ZoneId.systemDefault()).toInstant();
         } else {
-            LocalDateTime ldt = LocalDateTime.ofInstant(administered, ZoneId.systemDefault()).plusMonths(validMonths);
+            LocalDateTime ldt = LocalDateTime.ofInstant(administered == null ? Instant.now() : administered, ZoneId.systemDefault()).plusMonths(validMonths);
             next = ldt.atZone(ZoneId.systemDefault()).toInstant();
         }
+        v.setDoseNumber(doseNumber);
         v.setAdministeredAt(administered);
         v.setNextDueAt(next);
-        v.setStatus("RECORDED");
+        v.setStatus(v.getStatus() == null ? "PENDING" : v.getStatus());
         return vaccinationRepository.create(v);
     }
 
@@ -62,15 +64,27 @@ public class VaccinationService {
         int dosesRequired = vaccine.getDosesRequired() == null ? 1 : vaccine.getDosesRequired();
         int intervalDays = vaccine.getIntervalDays() == null ? 0 : vaccine.getIntervalDays();
         int validMonths = vaccine.getValidMonths() == null ? 12 : vaccine.getValidMonths();
-        Instant administered = currentVaccination.getAdministeredAt() == null ? Instant.now() : currentVaccination.getAdministeredAt();
+        // 使用当前时间作为计算基准，确保下一针时间是未来的
+        Instant administered = Instant.now();
 
-        if (currentVaccination.getDoseNumber() < dosesRequired) {
+        Integer currentDoseNumber = currentVaccination.getDoseNumber() == null ? 0 : currentVaccination.getDoseNumber();
+        if (currentDoseNumber < dosesRequired) {
             LocalDateTime ldt = LocalDateTime.ofInstant(administered, ZoneId.systemDefault()).plusDays(intervalDays);
             nextDueAt = ldt.atZone(ZoneId.systemDefault()).toInstant();
         } else {
             LocalDateTime ldt = LocalDateTime.ofInstant(administered, ZoneId.systemDefault()).plusMonths(validMonths);
             nextDueAt = ldt.atZone(ZoneId.systemDefault()).toInstant();
         }
+
+        // 自动创建下一针记录
+        Vaccination nextVaccination = new Vaccination();
+        nextVaccination.setPetId(currentVaccination.getPetId());
+        nextVaccination.setVaccineId(currentVaccination.getVaccineId());
+        nextVaccination.setDoseNumber(currentDoseNumber + 1);
+        nextVaccination.setAdministeredAt(Instant.now()); // 将当前时间作为实际接种时间
+        nextVaccination.setStatus("PENDING");
+        nextVaccination.setNextDueAt(nextDueAt);
+        vaccinationRepository.create(nextVaccination);
 
         return new VaccinationStatusUpdateResult(true, nextDueAt);
     }
@@ -94,7 +108,8 @@ public class VaccinationService {
         Vaccination nextVaccination = new Vaccination();
         nextVaccination.setPetId(currentVaccination.getPetId());
         nextVaccination.setVaccineId(currentVaccination.getVaccineId());
-        nextVaccination.setDoseNumber(currentVaccination.getDoseNumber() + 1);
+        Integer currentDoseNumber = currentVaccination.getDoseNumber() == null ? 0 : currentVaccination.getDoseNumber();
+        nextVaccination.setDoseNumber(currentDoseNumber + 1);
         nextVaccination.setStatus("PENDING");
 
         // 计算下次接种日期
@@ -102,9 +117,10 @@ public class VaccinationService {
         int dosesRequired = vaccine.getDosesRequired() == null ? 1 : vaccine.getDosesRequired();
         int intervalDays = vaccine.getIntervalDays() == null ? 0 : vaccine.getIntervalDays();
         int validMonths = vaccine.getValidMonths() == null ? 12 : vaccine.getValidMonths();
-        Instant administered = currentVaccination.getAdministeredAt() == null ? Instant.now() : currentVaccination.getAdministeredAt();
+        // 使用当前时间作为计算基准，确保下一针时间是未来的
+        Instant administered = Instant.now();
 
-        if (currentVaccination.getDoseNumber() < dosesRequired) {
+        if (currentDoseNumber < dosesRequired) {
             LocalDateTime ldt = LocalDateTime.ofInstant(administered, ZoneId.systemDefault()).plusDays(intervalDays);
             nextDueAt = ldt.atZone(ZoneId.systemDefault()).toInstant();
         } else {
@@ -130,12 +146,12 @@ public class VaccinationService {
         Vaccination nextVaccination = new Vaccination();
         nextVaccination.setPetId(currentVaccination.getPetId());
         nextVaccination.setVaccineId(currentVaccination.getVaccineId());
-        nextVaccination.setDoseNumber(currentVaccination.getDoseNumber() + 1);
+        Integer currentDoseNumber = currentVaccination.getDoseNumber() == null ? 0 : currentVaccination.getDoseNumber();
+        nextVaccination.setDoseNumber(currentDoseNumber + 1);
         nextVaccination.setStatus("PENDING");
         nextVaccination.setNextDueAt(customNextDueAt);
         nextVaccination.setClinic(clinic);
         nextVaccination.setVetName(vetName);
-
         // 保存下一针记录
         return vaccinationRepository.create(nextVaccination);
     }

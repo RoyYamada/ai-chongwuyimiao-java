@@ -21,89 +21,100 @@ public class VaccinationRepository {
     public Long create(Vaccination r) {
         KeyHolder kh = new GeneratedKeyHolder();
         jdbcTemplate.update(con -> {
-            PreparedStatement ps = con.prepareStatement("insert into vaccination(pet_id,vaccine_id,dose_number,administered_at,lot_number,clinic,vet_name,next_due_at,status) values(?,?,?,?,?,?,?,?,?)", new String[]{"id"});
+            PreparedStatement ps = con.prepareStatement("insert into vaccination(pet_id,vaccine_id,dose_number,administered_at,lot_number,clinic,vet_name,next_due_at,status,notes,is_unvaccinated) values(?,?,?,?,?,?,?,?,?,?,?)", new String[]{"id"});
             ps.setLong(1, r.getPetId());
             ps.setLong(2, r.getVaccineId());
             ps.setInt(3, r.getDoseNumber());
+            boolean isUnvaccinated = r.getIsUnvaccinated() == null ? false : r.getIsUnvaccinated();
             ps.setTimestamp(4, r.getAdministeredAt() == null ? Timestamp.from(Instant.now()) : Timestamp.from(r.getAdministeredAt()));
             ps.setString(5, r.getLotNumber());
             ps.setString(6, r.getClinic());
             ps.setString(7, r.getVetName());
             ps.setTimestamp(8, r.getNextDueAt() == null ? null : Timestamp.from(r.getNextDueAt()));
             ps.setString(9, r.getStatus());
+            ps.setString(10, r.getNotes());
+            ps.setBoolean(11, r.getIsUnvaccinated() == null ? false : r.getIsUnvaccinated());
             return ps;
         }, kh);
         return kh.getKey().longValue();
     }
 
     public List<Vaccination> listByPet(Long petId) {
-        return jdbcTemplate.query("select id,pet_id,vaccine_id,dose_number,administered_at,lot_number,clinic,vet_name,next_due_at,status from vaccination where pet_id=? order by administered_at desc",
+        return jdbcTemplate.query("select id,pet_id,vaccine_id,dose_number,administered_at,lot_number,clinic,vet_name,next_due_at,status,notes,is_unvaccinated from vaccination where pet_id=? order by administered_at desc",
                 (rs, i) -> {
                     Vaccination r = new Vaccination();
                     r.setId(rs.getLong("id"));
                     r.setPetId(rs.getLong("pet_id"));
                     r.setVaccineId(rs.getLong("vaccine_id"));
                     r.setDoseNumber(rs.getInt("dose_number"));
-                    r.setAdministeredAt(rs.getTimestamp("administered_at").toInstant());
+                    r.setAdministeredAt(rs.getTimestamp("administered_at") == null ? null : rs.getTimestamp("administered_at").toInstant());
                     r.setLotNumber(rs.getString("lot_number"));
                     r.setClinic(rs.getString("clinic"));
                     r.setVetName(rs.getString("vet_name"));
                     r.setNextDueAt(rs.getTimestamp("next_due_at") == null ? null : rs.getTimestamp("next_due_at").toInstant());
                     r.setStatus(rs.getString("status"));
+                    r.setNotes(rs.getString("notes"));
+                    r.setIsUnvaccinated(rs.getBoolean("is_unvaccinated"));
                     return r;
                 }, petId);
     }
 
     public List<Vaccination> listDueUntil(Instant to) {
-        return jdbcTemplate.query("select id,pet_id,vaccine_id,dose_number,administered_at,lot_number,clinic,vet_name,next_due_at,status from vaccination where next_due_at is not null and next_due_at<=? order by next_due_at asc",
+        return jdbcTemplate.query("select id,pet_id,vaccine_id,dose_number,administered_at,lot_number,clinic,vet_name,next_due_at,status,notes,is_unvaccinated from vaccination where next_due_at is not null and next_due_at<=? order by next_due_at asc",
                 (rs, i) -> {
                     Vaccination r = new Vaccination();
                     r.setId(rs.getLong("id"));
                     r.setPetId(rs.getLong("pet_id"));
                     r.setVaccineId(rs.getLong("vaccine_id"));
                     r.setDoseNumber(rs.getInt("dose_number"));
-                    r.setAdministeredAt(rs.getTimestamp("administered_at").toInstant());
+                    r.setAdministeredAt(rs.getTimestamp("administered_at") == null ? null : rs.getTimestamp("administered_at").toInstant());
                     r.setLotNumber(rs.getString("lot_number"));
                     r.setClinic(rs.getString("clinic"));
                     r.setVetName(rs.getString("vet_name"));
                     r.setNextDueAt(rs.getTimestamp("next_due_at") == null ? null : rs.getTimestamp("next_due_at").toInstant());
                     r.setStatus(rs.getString("status"));
+                    r.setNotes(rs.getString("notes"));
+                    r.setIsUnvaccinated(rs.getBoolean("is_unvaccinated"));
                     return r;
                 }, Timestamp.from(to));
     }
 
     public List<Vaccination> listFutureDue() {
-        return jdbcTemplate.query("select id,pet_id,vaccine_id,dose_number,administered_at,lot_number,clinic,vet_name,next_due_at,status from vaccination where next_due_at is not null order by next_due_at asc",
+        return jdbcTemplate.query("select id,pet_id,vaccine_id,dose_number,administered_at,lot_number,clinic,vet_name,next_due_at,status,notes,is_unvaccinated from vaccination where next_due_at is not null order by next_due_at asc",
                 (rs, i) -> {
                     Vaccination r = new Vaccination();
                     r.setId(rs.getLong("id"));
                     r.setPetId(rs.getLong("pet_id"));
                     r.setVaccineId(rs.getLong("vaccine_id"));
                     r.setDoseNumber(rs.getInt("dose_number"));
-                    r.setAdministeredAt(rs.getTimestamp("administered_at").toInstant());
+                    r.setAdministeredAt(rs.getTimestamp("administered_at") == null ? null : rs.getTimestamp("administered_at").toInstant());
                     r.setLotNumber(rs.getString("lot_number"));
                     r.setClinic(rs.getString("clinic"));
                     r.setVetName(rs.getString("vet_name"));
                     r.setNextDueAt(rs.getTimestamp("next_due_at") == null ? null : rs.getTimestamp("next_due_at").toInstant());
                     r.setStatus(rs.getString("status"));
+                    r.setNotes(rs.getString("notes"));
+                    r.setIsUnvaccinated(rs.getBoolean("is_unvaccinated"));
                     return r;
                 });
     }
 
     public Vaccination findById(Long id) {
-        return jdbcTemplate.queryForObject("select id,pet_id,vaccine_id,dose_number,administered_at,lot_number,clinic,vet_name,next_due_at,status from vaccination where id=?",
+        return jdbcTemplate.queryForObject("select id,pet_id,vaccine_id,dose_number,administered_at,lot_number,clinic,vet_name,next_due_at,status,notes,is_unvaccinated from vaccination where id=?",
                 (rs, i) -> {
                     Vaccination r = new Vaccination();
                     r.setId(rs.getLong("id"));
                     r.setPetId(rs.getLong("pet_id"));
                     r.setVaccineId(rs.getLong("vaccine_id"));
                     r.setDoseNumber(rs.getInt("dose_number"));
-                    r.setAdministeredAt(rs.getTimestamp("administered_at").toInstant());
+                    r.setAdministeredAt(rs.getTimestamp("administered_at") == null ? null : rs.getTimestamp("administered_at").toInstant());
                     r.setLotNumber(rs.getString("lot_number"));
                     r.setClinic(rs.getString("clinic"));
                     r.setVetName(rs.getString("vet_name"));
                     r.setNextDueAt(rs.getTimestamp("next_due_at") == null ? null : rs.getTimestamp("next_due_at").toInstant());
                     r.setStatus(rs.getString("status"));
+                    r.setNotes(rs.getString("notes"));
+                    r.setIsUnvaccinated(rs.getBoolean("is_unvaccinated"));
                     return r;
                 }, id);
     }
@@ -114,7 +125,7 @@ public class VaccinationRepository {
 
     public void update(Vaccination v) {
         jdbcTemplate.update(
-                "update vaccination set pet_id=?, vaccine_id=?, dose_number=?, administered_at=?, lot_number=?, clinic=?, vet_name=?, next_due_at=?, status=? where id=?",
+                "update vaccination set pet_id=?, vaccine_id=?, dose_number=?, administered_at=?, lot_number=?, clinic=?, vet_name=?, next_due_at=?, status=?, notes=?, is_unvaccinated=? where id=?",
                 v.getPetId(),
                 v.getVaccineId(),
                 v.getDoseNumber(),
@@ -124,6 +135,8 @@ public class VaccinationRepository {
                 v.getVetName(),
                 v.getNextDueAt() == null ? null : java.sql.Timestamp.from(v.getNextDueAt()),
                 v.getStatus(),
+                v.getNotes(),
+                v.getIsUnvaccinated() == null ? false : v.getIsUnvaccinated(),
                 v.getId()
         );
     }
