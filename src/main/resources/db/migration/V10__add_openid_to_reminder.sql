@@ -1,0 +1,1 @@
+alter table reminder add column openid text;

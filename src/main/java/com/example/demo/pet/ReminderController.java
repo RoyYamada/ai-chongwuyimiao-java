@@ -2,6 +2,7 @@ package com.example.demo.pet;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -31,8 +32,8 @@ public class ReminderController {
     }
 
     @PostMapping("/create-from-vaccination")
-    @Operation(summary = "根据疫苗接种记录创建提醒", description = "根据疫苗接种记录创建提醒，只需要提供template_id和vaccination_id")
-    public Long createFromVaccination(@RequestParam String templateId, @RequestParam Long vaccinationId) {
+    @Operation(summary = "根据疫苗接种记录创建提醒", description = "根据疫苗接种记录创建提醒，只需要提供template_id、vaccination_id和openid")
+    public Long createFromVaccination(@RequestParam String templateId, @RequestParam Long vaccinationId, @RequestParam String openid) {
         // 获取疫苗接种记录
         Vaccination vaccination = vaccinationRepository.findById(vaccinationId);
         if (vaccination == null) {
@@ -54,6 +55,7 @@ public class ReminderController {
         Reminder reminder = new Reminder();
         reminder.setTemplateId(templateId);
         reminder.setVaccinationId(vaccinationId);
+        reminder.setOpenid(openid);
         reminder.setReminderDate(vaccination.getNextDueAt().atZone(ZoneId.systemDefault()).toLocalDate());
         
         // 构建提醒事项
@@ -104,5 +106,14 @@ public class ReminderController {
     @Operation(summary = "删除提醒", description = "根据ID删除提醒")
     public void delete(@PathVariable Long id) {
         repo.delete(id);
+    }
+
+    @Autowired
+    private ReminderScheduler reminderScheduler;
+
+    @PostMapping("/trigger")
+    @Operation(summary = "手动触发提醒任务", description = "手动执行定时提醒任务，立即处理到期的提醒")
+    public void triggerReminderTask() {
+        reminderScheduler.processDueReminders();
     }
 }

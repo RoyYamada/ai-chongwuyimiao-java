@@ -1,17 +1,21 @@
 package com.example.demo.pet;
 
-import java.time.LocalDate;
 import java.time.Instant;
+import java.time.LocalDate;
 
 public class Reminder {
     private Long id;
     private String templateId;
     private Long vaccinationId;
+    private String openid;
     private LocalDate reminderDate;
     private String reminderThing;
     private String location;
     private String targetName;
     private String notes;
+    private Boolean sent;
+    private Instant sentAt;
+    private String sendError;
     private Instant createdAt;
     private Instant updatedAt;
 
@@ -37,6 +41,14 @@ public class Reminder {
 
     public void setVaccinationId(Long vaccinationId) {
         this.vaccinationId = vaccinationId;
+    }
+
+    public String getOpenid() {
+        return openid;
+    }
+
+    public void setOpenid(String openid) {
+        this.openid = openid;
     }
 
     public LocalDate getReminderDate() {
@@ -77,6 +89,30 @@ public class Reminder {
 
     public void setNotes(String notes) {
         this.notes = notes;
+    }
+
+    public Boolean getSent() {
+        return sent;
+    }
+
+    public void setSent(Boolean sent) {
+        this.sent = sent;
+    }
+
+    public Instant getSentAt() {
+        return sentAt;
+    }
+
+    public void setSentAt(Instant sentAt) {
+        this.sentAt = sentAt;
+    }
+
+    public String getSendError() {
+        return sendError;
+    }
+
+    public void setSendError(String sendError) {
+        this.sendError = sendError;
     }
 
     public Instant getCreatedAt() {
