@@ -8,7 +8,9 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -42,10 +44,57 @@ public class VaccinationController {
     }
 
     @GetMapping("/due")
-    @Operation(summary = "获取到期疫苗接种记录", description = "获取指定日期前到期的疫苗接种记录")
-    public List<Vaccination> due(@RequestParam String toDate) {
-        Instant to = LocalDate.parse(toDate).atStartOfDay(ZoneId.systemDefault()).plusDays(1).toInstant();
-        return repo.listDueUntil(to);
+    @Operation(summary = "获取到期疫苗接种记录", description = "获取状态是已接种的疫苗接种记录，支持分页")
+    public Map<String, Object> due(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        List<Vaccination> vaccinations = repo.listDueUntil(null, page, size);
+        int total = repo.countCompletedVaccinations();
+        
+        // 转换为与reminders接口相同的格式
+        List<VaccinationReminder> reminders = new ArrayList<>();
+        for (Vaccination vaccination : vaccinations) {
+            // 获取宠物信息
+            Optional<Pet> petOptional = petRepository.findById(vaccination.getPetId());
+            if (!petOptional.isPresent()) continue;
+            Pet pet = petOptional.get();
+
+            // 获取疫苗信息
+            List<Vaccine> vaccines = vaccineRepository.list(null);
+            Vaccine vaccine = vaccines.stream()
+                    .filter(v -> v.getId().equals(vaccination.getVaccineId()))
+                    .findFirst()
+                    .orElse(null);
+            if (vaccine == null) continue;
+
+            // 确定是基础免疫还是加强针
+            String doseInfo;
+            Integer doseNumber = vaccination.getDoseNumber() == null ? 0 : vaccination.getDoseNumber();
+            if (doseNumber < vaccine.getDosesRequired()) {
+                doseInfo = "第 " + (doseNumber + 1) + " 针";
+            } else {
+                doseInfo = "加强针";
+            }
+
+            // 创建提醒信息
+            VaccinationReminder reminder = new VaccinationReminder(
+                    vaccination.getId(),
+                    pet.getName(),
+                    pet.getBreed(),
+                    vaccine.getName(),
+                    doseInfo,
+                    vaccination.getNextDueAt()
+            );
+
+            reminders.add(reminder);
+        }
+        
+        Map<String, Object> result = new HashMap<>();
+        result.put("data", reminders);
+        result.put("total", total);
+        result.put("page", page);
+        result.put("size", size);
+        return result;
     }
 
     @GetMapping("/reminders")

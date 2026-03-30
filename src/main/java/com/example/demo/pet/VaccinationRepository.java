@@ -59,8 +59,9 @@ public class VaccinationRepository {
                 }, petId);
     }
 
-    public List<Vaccination> listDueUntil(Instant to) {
-        return jdbcTemplate.query("select id,pet_id,vaccine_id,dose_number,administered_at,lot_number,clinic,vet_name,next_due_at,status,notes,is_unvaccinated from vaccination where next_due_at is not null and next_due_at<=? order by next_due_at asc",
+    public List<Vaccination> listDueUntil(Instant to, int page, int size) {
+        int offset = (page - 1) * size;
+        return jdbcTemplate.query("select id,pet_id,vaccine_id,dose_number,administered_at,lot_number,clinic,vet_name,next_due_at,status,notes,is_unvaccinated from vaccination where status='COMPLETED' order by administered_at desc limit ? offset ?",
                 (rs, i) -> {
                     Vaccination r = new Vaccination();
                     r.setId(rs.getLong("id"));
@@ -76,7 +77,11 @@ public class VaccinationRepository {
                     r.setNotes(rs.getString("notes"));
                     r.setIsUnvaccinated(rs.getBoolean("is_unvaccinated"));
                     return r;
-                }, Timestamp.from(to));
+                }, size, offset);
+    }
+
+    public int countCompletedVaccinations() {
+        return jdbcTemplate.queryForObject("select count(*) from vaccination where status='COMPLETED'", Integer.class);
     }
 
     public List<Vaccination> listFutureDue() {
