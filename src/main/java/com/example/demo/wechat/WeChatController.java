@@ -52,11 +52,15 @@ public class WeChatController {
         String[] arr = new String[]{token, timestamp, nonce};
         Arrays.sort(arr);
         
+        System.out.println("排序后的参数: " + Arrays.toString(arr));
+        
         // 2. 将三个参数字符串拼接成一个字符串
         StringBuilder content = new StringBuilder();
         for (String s : arr) {
             content.append(s);
         }
+        
+        System.out.println("拼接后的字符串: " + content.toString());
         
         // 3. 进行sha1计算签名
         String calculatedSignature = null;
