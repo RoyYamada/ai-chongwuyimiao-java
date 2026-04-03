@@ -4,6 +4,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -22,13 +24,13 @@ public class WeChatController {
     
     @GetMapping("/callback")
     @Operation(summary = "微信消息推送验证", description = "用于微信小程序消息推送配置验证")
-    public String callback(
+    public String callbackGet(
             @RequestParam("signature") String signature,
             @RequestParam("timestamp") String timestamp,
             @RequestParam("nonce") String nonce,
-            @RequestParam("echostr") String echostr) {
+            @RequestParam(value = "echostr", required = false) String echostr) {
         
-        System.out.println("=== 微信消息推送验证 ===");
+        System.out.println("=== 微信消息推送验证 (GET) ===");
         System.out.println("signature: " + signature);
         System.out.println("timestamp: " + timestamp);
         System.out.println("nonce: " + nonce);
@@ -37,7 +39,32 @@ public class WeChatController {
         // 验证签名
         if (checkSignature(signature, timestamp, nonce)) {
             System.out.println("签名验证通过");
-            return echostr;
+            return echostr != null ? echostr : "success";
+        } else {
+            System.out.println("签名验证失败");
+            return "error";
+        }
+    }
+    
+    @PostMapping("/callback")
+    @Operation(summary = "微信消息推送处理", description = "处理微信小程序消息推送")
+    public String callbackPost(
+            @RequestParam("signature") String signature,
+            @RequestParam("timestamp") String timestamp,
+            @RequestParam("nonce") String nonce,
+            @RequestBody(required = false) String body) {
+        
+        System.out.println("=== 微信消息推送处理 (POST) ===");
+        System.out.println("signature: " + signature);
+        System.out.println("timestamp: " + timestamp);
+        System.out.println("nonce: " + nonce);
+        System.out.println("消息体: " + body);
+        
+        // 验证签名
+        if (checkSignature(signature, timestamp, nonce)) {
+            System.out.println("签名验证通过");
+            // 这里可以处理消息推送，比如用户订阅事件等
+            return "success";
         } else {
             System.out.println("签名验证失败");
             return "error";
