@@ -67,8 +67,8 @@ public class FileUploadController {
             
             // 上传到MinIO，设置 ACL 为 PublicRead
             logger.info("上传文件到MinIO，存储桶: {}, 文件名: {}", bucketName, filename);
-            PutObjectRequest putObjectRequest = new PutObjectRequest(bucketName, filename, tempFile)
-                    .withCannedAcl(CannedAccessControlList.PublicRead);
+            PutObjectRequest putObjectRequest = new PutObjectRequest(bucketName, filename, tempFile);
+            putObjectRequest.withCannedAcl(com.amazonaws.services.s3.model.CannedAccessControlList.PublicRead);
             minioClient.putObject(putObjectRequest);
             tempFile.delete();
             logger.info("临时文件已删除: {}", tempFile.getAbsolutePath());
