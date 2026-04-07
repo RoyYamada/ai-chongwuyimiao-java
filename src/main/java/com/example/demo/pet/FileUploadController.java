@@ -65,17 +65,19 @@ public class FileUploadController {
                 fos.write(file.getBytes());
             }
             
-            // 上传到MinIO，设置 ACL 为 PublicRead
+            // 上传到MinIO
             logger.info("上传文件到MinIO，存储桶: {}, 文件名: {}", bucketName, filename);
-            PutObjectRequest putObjectRequest = new PutObjectRequest(bucketName, filename, tempFile);
-            putObjectRequest.withCannedAcl(com.amazonaws.services.s3.model.CannedAccessControlList.PublicRead);
-            minioClient.putObject(putObjectRequest);
+            minioClient.putObject(new PutObjectRequest(bucketName, filename, tempFile));
             tempFile.delete();
             logger.info("临时文件已删除: {}", tempFile.getAbsolutePath());
             
-            // 生成普通文件 URL
-            String photoUrl = minioClient.getUrl(bucketName, filename).toString();
-            logger.info("文件上传成功，URL: {}", photoUrl);
+            // 生成预签名 URL，有效期为 100 年
+            java.util.Date expiration = new java.util.Date();
+            long expTimeMillis = expiration.getTime();
+            expTimeMillis += 1000L * 60 * 60 * 24 * 365 * 100; // 100 年
+            expiration.setTime(expTimeMillis);
+            String photoUrl = minioClient.generatePresignedUrl(bucketName, filename, expiration).toString();
+            logger.info("文件上传成功，预签名URL: {}", photoUrl);
 
             return ResponseEntity.ok(photoUrl);
         } catch (IOException e) {
