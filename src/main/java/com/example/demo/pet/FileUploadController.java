@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.PutObjectRequest;
+import com.amazonaws.services.s3.model.CannedAccessControlList;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -64,13 +65,15 @@ public class FileUploadController {
                 fos.write(file.getBytes());
             }
             
-            // 上传到MinIO
+            // 上传到MinIO，设置 ACL 为 PublicRead
             logger.info("上传文件到MinIO，存储桶: {}, 文件名: {}", bucketName, filename);
-            minioClient.putObject(new PutObjectRequest(bucketName, filename, tempFile));
+            PutObjectRequest putObjectRequest = new PutObjectRequest(bucketName, filename, tempFile)
+                    .withCannedAcl(CannedAccessControlList.PublicRead);
+            minioClient.putObject(putObjectRequest);
             tempFile.delete();
             logger.info("临时文件已删除: {}", tempFile.getAbsolutePath());
             
-            // 生成访问URL
+            // 生成普通文件 URL
             String photoUrl = minioClient.getUrl(bucketName, filename).toString();
             logger.info("文件上传成功，URL: {}", photoUrl);
 
