@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.PutObjectRequest;
-import com.amazonaws.services.s3.model.CannedAccessControlList;
+import com.example.demo.common.MinioUtil;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -31,6 +31,9 @@ public class FileUploadController {
     
     @Autowired
     private AmazonS3 minioClient;
+    
+    @Autowired
+    private MinioUtil minioUtil;
     
     @Value("${minio.bucket-name}")
     private String bucketName;
@@ -71,12 +74,8 @@ public class FileUploadController {
             tempFile.delete();
             logger.info("临时文件已删除: {}", tempFile.getAbsolutePath());
             
-            // 生成预签名 URL，有效期为 100 年
-            java.util.Date expiration = new java.util.Date();
-            long expTimeMillis = expiration.getTime();
-            expTimeMillis += 1000L * 60 * 60 * 24 * 365 * 100; // 100 年
-            expiration.setTime(expTimeMillis);
-            String photoUrl = minioClient.generatePresignedUrl(bucketName, filename, expiration).toString();
+            // 使用 MinioUtil 生成预签名 URL，默认 100 年过期
+            String photoUrl = minioUtil.generatePresignedUrl(filename);
             logger.info("文件上传成功，预签名URL: {}", photoUrl);
 
             return ResponseEntity.ok(photoUrl);
