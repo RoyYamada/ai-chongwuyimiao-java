@@ -74,7 +74,7 @@ public class FileUploadController {
             tempFile.delete();
             logger.info("临时文件已删除: {}", tempFile.getAbsolutePath());
             
-            // 使用 MinioUtil 生成预签名 URL，默认 100 年过期
+            // 使用 MinioUtil 生成预签名 URL，默认 7 天过期
             String photoUrl = minioUtil.generatePresignedUrl(filename);
             logger.info("文件上传成功，预签名URL: {}", photoUrl);
 
