@@ -39,7 +39,17 @@ public class UserController {
         Optional<Owner> ownerOptional = ownerRepository.findByOpenid(openid);
         if (ownerOptional.isPresent()) {
             Owner owner = ownerOptional.get();
-            owner.setAvatar(avatar);
+            // 从 avatar URL 中提取文件名，去掉 URL 参数和路径
+            if (avatar != null) {
+                // 提取文件名（去掉查询参数）
+                int queryIndex = avatar.indexOf('?');
+                if (queryIndex > 0) {
+                    avatar = avatar.substring(0, queryIndex);
+                }
+                // 提取文件名（去掉路径）
+                String filename = avatar.substring(avatar.lastIndexOf('/') + 1);
+                owner.setAvatar(filename);
+            }
             ownerRepository.update(owner);
             return ApiResponse.ok(owner);
         } else {

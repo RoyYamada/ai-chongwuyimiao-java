@@ -1,6 +1,7 @@
 package com.example.demo.auth;
 
 import com.example.demo.common.UsernameGenerator;
+import com.example.demo.common.MinioUtil;
 import com.example.demo.pet.Owner;
 import com.example.demo.pet.OwnerRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -32,11 +33,13 @@ public class WxAuthService {
     private final RestTemplate restTemplate = new RestTemplate();
     private final WxSessionRepository sessionRepository;
     private final OwnerRepository ownerRepository;
+    private final MinioUtil minioUtil;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public WxAuthService(WxSessionRepository sessionRepository, OwnerRepository ownerRepository) {
+    public WxAuthService(WxSessionRepository sessionRepository, OwnerRepository ownerRepository, MinioUtil minioUtil) {
         this.sessionRepository = sessionRepository;
         this.ownerRepository = ownerRepository;
+        this.minioUtil = minioUtil;
     }
 
     public Map<String, Object> loginByCode(String code) {
@@ -68,6 +71,12 @@ public class WxAuthService {
                 ownerRepository.create(newOwner);
                 return newOwner;
             });
+            
+            // 为用户头像生成预签名 URL
+            if (owner.getAvatar() != null && !owner.getAvatar().startsWith("http")) {
+                String presignedUrl = minioUtil.generatePresignedUrl(owner.getAvatar());
+                owner.setAvatar(presignedUrl);
+            }
             
             Map<String, Object> out = new HashMap<>();
             out.put("token", token);
