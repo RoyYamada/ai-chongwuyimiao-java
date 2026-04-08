@@ -127,7 +127,7 @@ public class ReminderScheduler {
         
         // 事项地点
         Map<String, String> thing4 = new HashMap<>();
-        String locationValue = reminder.getLocation() != null ? reminder.getLocation() : "";
+        String locationValue = reminder.getLocation() != null ? reminder.getLocation() : "无";
         thing4.put("value", locationValue);
         data.put("thing4", thing4);
         System.out.println("   事项地点: " + locationValue);
@@ -140,7 +140,7 @@ public class ReminderScheduler {
         
         // 备注
         Map<String, String> thing9 = new HashMap<>();
-        String notesValue = reminder.getNotes() != null ? reminder.getNotes() : "";
+        String notesValue = reminder.getNotes() != null ? reminder.getNotes() : "无";
         thing9.put("value", notesValue);
         data.put("thing9", thing9);
         System.out.println("   备注: " + notesValue);
