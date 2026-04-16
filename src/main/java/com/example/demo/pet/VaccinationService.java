@@ -13,10 +13,12 @@ import java.util.Optional;
 public class VaccinationService {
     private final VaccineRepository vaccineRepository;
     private final VaccinationRepository vaccinationRepository;
+    private final ReminderRepository reminderRepository;
 
-    public VaccinationService(VaccineRepository vaccineRepository, VaccinationRepository vaccinationRepository) {
+    public VaccinationService(VaccineRepository vaccineRepository, VaccinationRepository vaccinationRepository, ReminderRepository reminderRepository) {
         this.vaccineRepository = vaccineRepository;
         this.vaccinationRepository = vaccinationRepository;
+        this.reminderRepository = reminderRepository;
     }
 
     @Transactional
@@ -180,6 +182,28 @@ public class VaccinationService {
 
         public void setNextDueAt(Instant nextDueAt) {
             this.nextDueAt = nextDueAt;
+        }
+    }
+
+    @Transactional
+    public void deleteReminder(Long vaccinationId) {
+        // 查找接种记录
+        Vaccination vaccination = vaccinationRepository.findById(vaccinationId);
+        if (vaccination == null) {
+            throw new RuntimeException("接种记录不存在");
+        }
+
+        // 将 next_due_at 置空
+        vaccination.setNextDueAt(null);
+        // 更新状态为 COMPLETED
+        vaccination.setStatus("COMPLETED");
+        // 更新接种记录
+        vaccinationRepository.update(vaccination);
+
+        // 删除相关的提醒记录
+        List<Reminder> reminders = reminderRepository.listByVaccination(vaccinationId);
+        for (Reminder reminder : reminders) {
+            reminderRepository.delete(reminder.getId());
         }
     }
 }

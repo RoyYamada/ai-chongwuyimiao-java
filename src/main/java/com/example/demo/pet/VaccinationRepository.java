@@ -84,6 +84,39 @@ public class VaccinationRepository {
         return jdbcTemplate.queryForObject("select count(*) from vaccination where status='COMPLETED'", Integer.class);
     }
 
+    public List<Vaccination> listDueCompletedByOwner(Long ownerId, int page, int size) {
+        int offset = (page - 1) * size;
+        return jdbcTemplate.query(
+                "select v.id,v.pet_id,v.vaccine_id,v.dose_number,v.administered_at,v.lot_number,v.clinic,v.vet_name,v.next_due_at,v.status,v.notes,v.is_unvaccinated " +
+                        "from vaccination v join pet p on v.pet_id=p.id " +
+                        "where v.status='COMPLETED' and p.owner_id=? " +
+                        "order by v.administered_at desc limit ? offset ?",
+                (rs, i) -> {
+                    Vaccination r = new Vaccination();
+                    r.setId(rs.getLong("id"));
+                    r.setPetId(rs.getLong("pet_id"));
+                    r.setVaccineId(rs.getLong("vaccine_id"));
+                    r.setDoseNumber(rs.getInt("dose_number"));
+                    r.setAdministeredAt(rs.getTimestamp("administered_at") == null ? null : rs.getTimestamp("administered_at").toInstant());
+                    r.setLotNumber(rs.getString("lot_number"));
+                    r.setClinic(rs.getString("clinic"));
+                    r.setVetName(rs.getString("vet_name"));
+                    r.setNextDueAt(rs.getTimestamp("next_due_at") == null ? null : rs.getTimestamp("next_due_at").toInstant());
+                    r.setStatus(rs.getString("status"));
+                    r.setNotes(rs.getString("notes"));
+                    r.setIsUnvaccinated(rs.getBoolean("is_unvaccinated"));
+                    return r;
+                }, ownerId, size, offset);
+    }
+
+    public int countCompletedVaccinationsByOwner(Long ownerId) {
+        return jdbcTemplate.queryForObject(
+                "select count(*) from vaccination v join pet p on v.pet_id=p.id where v.status='COMPLETED' and p.owner_id=?",
+                Integer.class,
+                ownerId
+        );
+    }
+
     public List<Vaccination> listFutureDue() {
         return jdbcTemplate.query("select id,pet_id,vaccine_id,dose_number,administered_at,lot_number,clinic,vet_name,next_due_at,status,notes,is_unvaccinated from vaccination where next_due_at is not null order by next_due_at asc",
                 (rs, i) -> {
@@ -102,6 +135,30 @@ public class VaccinationRepository {
                     r.setIsUnvaccinated(rs.getBoolean("is_unvaccinated"));
                     return r;
                 });
+    }
+
+    public List<Vaccination> listFutureDueByOwner(Long ownerId) {
+        return jdbcTemplate.query(
+                "select v.id,v.pet_id,v.vaccine_id,v.dose_number,v.administered_at,v.lot_number,v.clinic,v.vet_name,v.next_due_at,v.status,v.notes,v.is_unvaccinated " +
+                        "from vaccination v join pet p on v.pet_id=p.id " +
+                        "where v.next_due_at is not null and v.status='PENDING' and p.owner_id=? " +
+                        "order by v.next_due_at asc",
+                (rs, i) -> {
+                    Vaccination r = new Vaccination();
+                    r.setId(rs.getLong("id"));
+                    r.setPetId(rs.getLong("pet_id"));
+                    r.setVaccineId(rs.getLong("vaccine_id"));
+                    r.setDoseNumber(rs.getInt("dose_number"));
+                    r.setAdministeredAt(rs.getTimestamp("administered_at") == null ? null : rs.getTimestamp("administered_at").toInstant());
+                    r.setLotNumber(rs.getString("lot_number"));
+                    r.setClinic(rs.getString("clinic"));
+                    r.setVetName(rs.getString("vet_name"));
+                    r.setNextDueAt(rs.getTimestamp("next_due_at") == null ? null : rs.getTimestamp("next_due_at").toInstant());
+                    r.setStatus(rs.getString("status"));
+                    r.setNotes(rs.getString("notes"));
+                    r.setIsUnvaccinated(rs.getBoolean("is_unvaccinated"));
+                    return r;
+                }, ownerId);
     }
 
     public Vaccination findById(Long id) {
