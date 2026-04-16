@@ -188,15 +188,15 @@ public class VaccinationService {
     @Transactional
     public void deleteReminder(Long vaccinationId) {
         // 查找接种记录
-        Vaccination vaccination = vaccinationRepository.findById(vaccinationId);
-        if (vaccination == null) {
+        Vaccination vaccination;
+        try {
+            vaccination = vaccinationRepository.findById(vaccinationId);
+        } catch (Exception e) {
             throw new RuntimeException("接种记录不存在");
         }
 
         // 将 next_due_at 置空
         vaccination.setNextDueAt(null);
-        // 更新状态为 COMPLETED
-        vaccination.setStatus("COMPLETED");
         // 更新接种记录
         vaccinationRepository.update(vaccination);
 

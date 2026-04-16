@@ -62,6 +62,12 @@ public class VaccinationController {
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "not found");
         }
+        if (v == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "not found");
+        }
+        if (v.getPetId() == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "pet not found");
+        }
         requireOwnedPet(v.getPetId());
         return v;
     }
@@ -94,6 +100,9 @@ public class VaccinationController {
         // 转换为与reminders接口相同的格式
         List<VaccinationReminder> reminders = new ArrayList<>();
         for (Vaccination vaccination : vaccinations) {
+            // 检查nextDueAt是否为null
+            if (vaccination.getNextDueAt() == null) continue;
+            
             // 获取宠物信息
             Optional<Pet> petOptional = petRepository.findById(vaccination.getPetId());
             if (!petOptional.isPresent()) continue;
@@ -153,6 +162,9 @@ public class VaccinationController {
 
         List<VaccinationReminder> reminders = new ArrayList<>();
         for (Vaccination vaccination : vaccinations) {
+            // 检查nextDueAt是否为null
+            if (vaccination.getNextDueAt() == null) continue;
+            
             Pet pet = petById.get(vaccination.getPetId());
             if (pet == null) continue;
             Vaccine vaccine = vaccineById.get(vaccination.getVaccineId());
@@ -199,8 +211,11 @@ public class VaccinationController {
     @Operation(summary = "手动创建下一针", description = "用户自己填写日期和其他信息，覆盖自动计算")
     public Vaccination createNextDoseManually(
             @PathVariable Long id,
-            @RequestBody Vaccination v) {
+            @RequestBody(required = false) Vaccination v) {
         requireOwnedVaccination(id);
+        if (v == null) {
+            v = new Vaccination();
+        }
         Long newId = service.createNextDoseManually(id, v.getNextDueAt(), v.getClinic(), v.getVetName());
         return repo.findById(newId);
     }
