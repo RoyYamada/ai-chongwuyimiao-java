@@ -22,7 +22,8 @@ public class VaccinationReminder {
         this.vaccineName = vaccineName;
         this.doseInfo = doseInfo;
         this.dueDate = nextDueAt.atZone(ZoneId.systemDefault()).toLocalDate();
-        this.daysUntilDue = ChronoUnit.DAYS.between(LocalDate.now(), this.dueDate);
+        // 使用Instant直接计算天数差，考虑完整的时间信息
+        this.daysUntilDue = ChronoUnit.DAYS.between(Instant.now(), nextDueAt);
         this.isOverdue = this.daysUntilDue < 0;
     }
 
