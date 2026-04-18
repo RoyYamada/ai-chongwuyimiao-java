@@ -214,7 +214,7 @@ public class VaccinationController {
     public Vaccination update(@PathVariable Long id, @RequestBody Vaccination v) {
         requireOwnedVaccination(id);
         v.setId(id);
-        repo.update(v);
+        service.updateVaccination(v);
         return repo.findById(id);
     }
 

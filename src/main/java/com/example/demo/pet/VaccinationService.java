@@ -3,6 +3,7 @@ package com.example.demo.pet;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -45,7 +46,8 @@ public class VaccinationService {
         }
         v.setNextDueAt(next);
         v.setStatus(v.getStatus() == null ? "PENDING" : v.getStatus());
-        return vaccinationRepository.create(v);
+        Long id = vaccinationRepository.create(v);
+        return id;
     }
 
     @Transactional
@@ -85,7 +87,7 @@ public class VaccinationService {
         nextVaccination.setAdministeredAt(now.format(FORMATTER));
         nextVaccination.setStatus("PENDING");
         nextVaccination.setNextDueAt(nextDueAt);
-        vaccinationRepository.create(nextVaccination);
+        Long newId = vaccinationRepository.create(nextVaccination);
 
         return new VaccinationStatusUpdateResult(true, nextDueAt);
     }
@@ -125,8 +127,8 @@ public class VaccinationService {
         }
 
         nextVaccination.setNextDueAt(nextDueAt);
-
-        return vaccinationRepository.create(nextVaccination);
+        Long newId = vaccinationRepository.create(nextVaccination);
+        return newId;
     }
 
     @Transactional
@@ -145,7 +147,33 @@ public class VaccinationService {
         nextVaccination.setNextDueAt(customNextDueAt);
         nextVaccination.setClinic(clinic);
         nextVaccination.setVetName(vetName);
-        return vaccinationRepository.create(nextVaccination);
+        Long newId = vaccinationRepository.create(nextVaccination);
+        return newId;
+    }
+
+    @Transactional
+    public void updateVaccination(Vaccination vaccination) {
+        vaccinationRepository.update(vaccination);
+        syncReminderDate(vaccination.getId(), vaccination.getNextDueAt());
+    }
+
+    @Transactional
+    public void syncReminderDate(Long vaccinationId, String nextDueAt) {
+        if (nextDueAt == null || nextDueAt.isEmpty()) {
+            return;
+        }
+
+        List<Reminder> reminders = reminderRepository.listByVaccination(vaccinationId);
+        if (!reminders.isEmpty()) {
+            LocalDateTime dateTime = Vaccination.parseToLocalDateTime(nextDueAt);
+            if (dateTime != null) {
+                LocalDate reminderDate = dateTime.toLocalDate();
+                for (Reminder reminder : reminders) {
+                    reminder.setReminderDate(reminderDate);
+                    reminderRepository.update(reminder);
+                }
+            }
+        }
     }
 
     public static class VaccinationStatusUpdateResult {
