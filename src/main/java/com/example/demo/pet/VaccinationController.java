@@ -8,9 +8,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -96,19 +93,15 @@ public class VaccinationController {
         Owner owner = currentOwner();
         List<Vaccination> vaccinations = repo.listDueCompletedByOwner(owner.getId(), page, size);
         int total = repo.countCompletedVaccinationsByOwner(owner.getId());
-        
-        // 转换为与reminders接口相同的格式
+
         List<VaccinationReminder> reminders = new ArrayList<>();
         for (Vaccination vaccination : vaccinations) {
-            // 检查nextDueAt是否为null
             if (vaccination.getNextDueAt() == null) continue;
-            
-            // 获取宠物信息
+
             Optional<Pet> petOptional = petRepository.findById(vaccination.getPetId());
             if (!petOptional.isPresent()) continue;
             Pet pet = petOptional.get();
 
-            // 获取疫苗信息
             List<Vaccine> vaccines = vaccineRepository.list(null);
             Vaccine vaccine = vaccines.stream()
                     .filter(v -> v.getId().equals(vaccination.getVaccineId()))
@@ -116,7 +109,6 @@ public class VaccinationController {
                     .orElse(null);
             if (vaccine == null) continue;
 
-            // 确定是基础免疫还是加强针
             String doseInfo;
             Integer doseNumber = vaccination.getDoseNumber() == null ? 0 : vaccination.getDoseNumber();
             if (doseNumber < vaccine.getDosesRequired()) {
@@ -125,7 +117,6 @@ public class VaccinationController {
                 doseInfo = "加强针";
             }
 
-            // 创建提醒信息
             VaccinationReminder reminder = new VaccinationReminder(
                     vaccination.getId(),
                     pet.getName(),
@@ -137,7 +128,7 @@ public class VaccinationController {
 
             reminders.add(reminder);
         }
-        
+
         Map<String, Object> result = new HashMap<>();
         result.put("data", reminders);
         result.put("total", total);
@@ -149,7 +140,6 @@ public class VaccinationController {
     @GetMapping("/reminders")
     @Operation(summary = "获取疫苗接种提醒", description = "获取格式化的疫苗接种提醒信息，包括未来和超时的")
     public List<VaccinationReminder> getReminders() {
-        // 获取所有需要提醒的疫苗接种记录（包括未来和超时的）
         Owner owner = currentOwner();
         List<Vaccination> vaccinations = repo.listFutureDueByOwner(owner.getId());
 
@@ -162,9 +152,8 @@ public class VaccinationController {
 
         List<VaccinationReminder> reminders = new ArrayList<>();
         for (Vaccination vaccination : vaccinations) {
-            // 检查nextDueAt是否为null
             if (vaccination.getNextDueAt() == null) continue;
-            
+
             Pet pet = petById.get(vaccination.getPetId());
             if (pet == null) continue;
             Vaccine vaccine = vaccineById.get(vaccination.getVaccineId());

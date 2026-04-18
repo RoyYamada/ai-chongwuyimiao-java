@@ -1,9 +1,7 @@
 package com.example.demo.pet;
 
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 
 public class VaccinationReminder {
@@ -16,18 +14,43 @@ public class VaccinationReminder {
     private long daysUntilDue;
     private boolean isOverdue;
 
-    public VaccinationReminder(Long vaccinationId, String petName, String petBreed, String vaccineName, String doseInfo, Instant nextDueAt) {
+    public VaccinationReminder(Long vaccinationId, String petName, String petBreed, String vaccineName, String doseInfo, String nextDueAt) {
         this.vaccinationId = vaccinationId;
         this.petName = petName;
         this.petBreed = petBreed;
         this.vaccineName = vaccineName;
         this.doseInfo = doseInfo;
-        this.dueDate = nextDueAt.atZone(ZoneId.systemDefault()).toLocalDate();
-        // 转换为本地时间后计算天数差，避免时区问题
-        LocalDateTime now = LocalDateTime.now(ZoneId.systemDefault());
-        LocalDateTime dueDateTime = LocalDateTime.ofInstant(nextDueAt, ZoneId.systemDefault());
-        this.daysUntilDue = ChronoUnit.DAYS.between(now.toLocalDate(), dueDateTime.toLocalDate());
-        this.isOverdue = this.daysUntilDue < 0;
+
+        LocalDateTime dateTime = Vaccination.parseToLocalDateTime(nextDueAt);
+        if (dateTime != null) {
+            this.dueDate = dateTime.toLocalDate();
+            LocalDate now = LocalDate.now();
+            this.daysUntilDue = ChronoUnit.DAYS.between(now, this.dueDate);
+            this.isOverdue = this.daysUntilDue < 0;
+        } else {
+            this.dueDate = null;
+            this.daysUntilDue = 0;
+            this.isOverdue = false;
+        }
+    }
+
+    public VaccinationReminder(Long vaccinationId, String petName, String petBreed, String vaccineName, String doseInfo, LocalDate dueDate) {
+        this.vaccinationId = vaccinationId;
+        this.petName = petName;
+        this.petBreed = petBreed;
+        this.vaccineName = vaccineName;
+        this.doseInfo = doseInfo;
+
+        if (dueDate != null) {
+            this.dueDate = dueDate;
+            LocalDate now = LocalDate.now();
+            this.daysUntilDue = ChronoUnit.DAYS.between(now, this.dueDate);
+            this.isOverdue = this.daysUntilDue < 0;
+        } else {
+            this.dueDate = null;
+            this.daysUntilDue = 0;
+            this.isOverdue = false;
+        }
     }
 
     public Long getVaccinationId() {
@@ -97,9 +120,9 @@ public class VaccinationReminder {
     @Override
     public String toString() {
         if (isOverdue) {
-            return petName + "（" + petBreed + "）" + vaccineName + " " + doseInfo + "待接种日期：" + dueDate + "已超时：" + Math.abs(daysUntilDue) + " 天";
+            return petName + " (" + petBreed + ") " + vaccineName + " " + doseInfo + " Due date: " + dueDate + " Overdue by: " + Math.abs(daysUntilDue) + " days";
         } else {
-            return petName + "（" + petBreed + "）" + vaccineName + " " + doseInfo + "待接种日期：" + dueDate + "距离接种还有：" + daysUntilDue + " 天";
+            return petName + " (" + petBreed + ") " + vaccineName + " " + doseInfo + " Due date: " + dueDate + " Days until: " + daysUntilDue + " days";
         }
     }
 }

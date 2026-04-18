@@ -34,31 +34,28 @@ public class ReminderController {
     @PostMapping("/create-from-vaccination")
     @Operation(summary = "根据疫苗接种记录创建提醒", description = "根据疫苗接种记录创建提醒，只需要提供template_id、vaccination_id和openid")
     public Long createFromVaccination(@RequestParam String templateId, @RequestParam Long vaccinationId, @RequestParam String openid) {
-        // 获取疫苗接种记录
         Vaccination vaccination = vaccinationRepository.findById(vaccinationId);
         if (vaccination == null) {
             throw new RuntimeException("疫苗接种记录不存在");
         }
-        
-        // 获取宠物信息
+
         Pet pet = petRepository.findById(vaccination.getPetId())
                 .orElseThrow(() -> new RuntimeException("宠物不存在"));
-        
-        // 获取疫苗信息
+
         List<Vaccine> vaccines = vaccineRepository.list(null);
         Vaccine vaccine = vaccines.stream()
                 .filter(v -> v.getId().equals(vaccination.getVaccineId()))
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("疫苗不存在"));
-        
-        // 创建提醒
+
         Reminder reminder = new Reminder();
         reminder.setTemplateId(templateId);
         reminder.setVaccinationId(vaccinationId);
         reminder.setOpenid(openid);
-        reminder.setReminderDate(vaccination.getNextDueAt().atZone(ZoneId.systemDefault()).toLocalDate());
-        
-        // 构建提醒事项
+
+        LocalDate nextDueDate = Vaccination.parseToLocalDateTime(vaccination.getNextDueAt()).toLocalDate();
+        reminder.setReminderDate(nextDueDate);
+
         String petInfo = pet.getName() + "(" + pet.getBreed() + ")";
         String doseInfo;
         Integer doseNumber = vaccination.getDoseNumber() == null ? 0 : vaccination.getDoseNumber();
@@ -67,12 +64,12 @@ public class ReminderController {
         } else {
             doseInfo = "加强针";
         }
-        
+
         reminder.setReminderThing(petInfo + "-" + vaccine.getName() + doseInfo);
         reminder.setLocation(vaccination.getClinic());
         reminder.setTargetName(petInfo);
         reminder.setNotes(vaccination.getNotes());
-        
+
         return repo.create(reminder);
     }
 
